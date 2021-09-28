@@ -52,23 +52,41 @@ import static org.junit.Assert.assertTrue;
 public class ITElasticSearchTest {
 
     @Parameterized.Parameters(name = "version: {0}")
-    public static Collection<Object[]> versions() {
-        return Arrays.asList(new Object[][] {
-            {"6.3.2"}, {"7.4.2"}, {"7.8.0"}, {"7.10.2"}
+    public static Collection<DockerImageName[]> versions() {
+        return Arrays.asList(new DockerImageName[][] {
+            {
+                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss")
+                    .withTag("6.3.2")
+            },
+            {
+                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss")
+                    .withTag("7.4.2")
+            },
+            {
+                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss")
+                    .withTag("7.8.0")
+            },
+            {
+                DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss")
+                    .withTag("7.15.0")
+            },
+            {
+                DockerImageName.parse("opensearchproject/opensearch").withTag("1.0.0")
+                    .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch-oss")
+            }
         });
     }
 
-    private final String version;
+    private final DockerImageName version;
 
     private ElasticsearchContainer server;
     private ElasticSearch client;
 
     @Before
     public void setup() {
-        server = new ElasticsearchContainer(
-            DockerImageName.parse("docker.elastic.co/elasticsearch/elasticsearch-oss")
-                           .withTag(version)
-        );
+        server = new ElasticsearchContainer(version)
+            .withEnv("plugins.security.disabled", "true") // Takes effect in OpenSearch
+        ;
         server.start();
 
         client = ElasticSearch.builder()
